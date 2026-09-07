@@ -33,16 +33,16 @@ def extract_code_stats(file_path, content):
         in_block_comment = False
         for line in lines:
             stripped = line.strip()
-            if stripped.startswith("//"):
+            if in_block_comment:
+                comment_count += 1
+                if "*/" in line:
+                    in_block_comment = False
+            elif stripped.startswith("//"):
                 comment_count += 1
             elif "/*" in line:
-                in_block_comment = True
                 comment_count += 1
-            elif "*/" in line:
-                in_block_comment = False
-                comment_count += 1
-            elif in_block_comment:
-                comment_count += 1
+                if "*/" not in line.split("/*", 1)[1]:
+                    in_block_comment = True
         stats["comments"] = comment_count
     else:
         # Default: count lines that look like comments
@@ -52,14 +52,14 @@ def extract_code_stats(file_path, content):
         try:
             tree = ast.parse(content)
             for node in ast.walk(tree):
-                if isinstance(node, ast.FunctionDef):
+                if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
                     stats["functions"] += 1
                 elif isinstance(node, ast.ClassDef):
                     stats["classes"] += 1
                 elif isinstance(node, ast.Import):
                     stats["imports"].extend(alias.name for alias in node.names)
                 elif isinstance(node, ast.ImportFrom):
-                    stats["imports"].append(node.module)
+                    stats["imports"].append(node.module or "." * node.level)
         except Exception as e:
             logging.warning(f"Could not parse {file_path}: {e}")
 
