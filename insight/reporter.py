@@ -1,7 +1,15 @@
 import os
 
+
+def _report_filename(file_path):
+    normalized_path = os.path.normpath(file_path)
+    if os.altsep:
+        normalized_path = normalized_path.replace(os.altsep, "_")
+    return normalized_path.replace(os.sep, "_").replace(":", "_") + ".md"
+
+
 def save_file_report(file_info, output_dir):
-    filename = os.path.basename(file_info["file"]) + ".md"
+    filename = _report_filename(file_info["file"])
     filepath = os.path.join(output_dir, filename)
     with open(filepath, "w") as f:
         f.write(f"# Report for `{file_info['file']}`\n\n")
@@ -30,5 +38,5 @@ def generate_report(analysis, output_dir="report"):
         f.write(f"**Total lines of code:** {total_lines}\n\n")
         f.write("## Files Included\n")
         for file_info in analysis:
-            short_name = os.path.basename(file_info["file"])
-            f.write(f"- [{short_name}]({short_name}.md) ({file_info['total_lines']} lines)\n")
+            report_name = _report_filename(file_info["file"])
+            f.write(f"- [{report_name}]({report_name}) ({file_info['total_lines']} lines)\n")
